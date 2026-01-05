@@ -1,13 +1,13 @@
 import express from 'express';
-import WebSocket, { WebSocketServer } from 'ws';
-import fetch from 'node-fetch';
-import { v4 as uuidv4 } from 'uuid';
+import { WebSocketServer } from 'ws';
 import dotenv from 'dotenv';
+import './streaming-gateway.js';
 
 dotenv.config();
 
 const app = express();
-const server = app.listen(3000);
-const wss = new WebSocketServer({ server });
+const server = app.listen(process.env.PORT || 3000, () => {
+    console.log('Server running');
+});
 
-console.log('WebSocket server running on port 3000');
+export const wss = new WebSocketServer({ server });
