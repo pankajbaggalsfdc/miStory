@@ -1,3 +1,13 @@
+import { WebSocketServer } from 'ws'; // Make sure you installed the 'ws' package
+import http from 'http';
+
+// 1. Create a basic HTTP server (or use your Express app)
+const server = http.createServer();
+
+// 2. Initialize the WebSocket Server
+// On Heroku, the server should be tied to the HTTP server
+const wss = new WebSocketServer({ server });
+
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
