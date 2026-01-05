@@ -3,13 +3,14 @@ wss.on('connection', (ws) => {
 
     ws.on('message', async (message) => {
         const { prompt } = JSON.parse(message.toString());
+        const mySecret = process.env.apikey;
 
         const response = await fetch(
             'https://api.openai.com/v1/chat/completions',
             {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Authorization': `Bearer ${mySecret}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
