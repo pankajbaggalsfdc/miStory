@@ -11,6 +11,12 @@ const wss = new WebSocketServer({ server });
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
+    const heartbeat = setInterval(() => {
+        if (ws.readyState === 1) { // 1 = OPEN
+            ws.send(JSON.stringify({ type: 'ping', data: 'stay alive' }));
+        }
+    }, 30000);
+
     ws.on('message', async (message) => {
         const { prompt } = JSON.parse(message.toString());
         const mySecret = process.env.apikey;
@@ -65,5 +71,8 @@ wss.on('connection', (ws) => {
         }
     });
 
-    ws.on('close', () => console.log('Client disconnected'));
+    ws.on('close', () => {
+        clearInterval(heartbeat);
+        console.log('Client disconnected')
+    });
 });
