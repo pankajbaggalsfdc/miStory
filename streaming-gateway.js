@@ -4,7 +4,6 @@ export function registerStreamingGateway(wss) {
     wss.on('connection', (ws) => {
         console.log('🔌 Client connected');
 
-        // 🔁 Heroku keep-alive
         const heartbeat = setInterval(() => {
             if (ws.readyState === ws.OPEN) {
                 ws.send(JSON.stringify({ type: 'ping' }));
@@ -39,17 +38,13 @@ export function registerStreamingGateway(wss) {
                     }
                 );
 
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
                 let buffer = '';
 
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
+                response.body.on('data', (chunk) => {
+                    buffer += chunk.toString();
 
-                    buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n');
-                    buffer = lines.pop();
+                    buffer = lines.pop(); // keep partial line
 
                     for (const line of lines) {
                         if (!line.startsWith('data:')) continue;
@@ -70,10 +65,15 @@ export function registerStreamingGateway(wss) {
                                 }));
                             }
                         } catch {
-                            // partial JSON
+                            // partial JSON, ignore
                         }
                     }
-                }
+                });
+
+                response.body.on('end', () => {
+                    ws.send(JSON.stringify({ type: 'done' }));
+                });
+
             } catch (err) {
                 ws.send(JSON.stringify({
                     type: 'error',
