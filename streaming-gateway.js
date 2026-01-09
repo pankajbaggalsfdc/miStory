@@ -12,14 +12,23 @@ wss.on('connection', (ws) => {
     console.log('Client connected');
 
     const heartbeat = setInterval(() => {
-        if (ws.readyState === 1) { // 1 = OPEN
-            ws.send(JSON.stringify({ type: 'ping', data: 'stay alive' }));
+        if (ws.readyState === ws.OPEN) {
+            ws.send(JSON.stringify({ type: 'ping' }));
         }
     }, 30000);
 
     ws.on('message', async (message) => {
-        const { prompt } = JSON.parse(message.toString());
+        let data;
+        try {
+            data = JSON.parse(message.toString());
+        } catch {
+            return;
+        }        
         const mySecret = process.env.apikey;
+        
+        if (data.type === 'pong') return;
+
+        if (!data.prompt) return;
 
         const response = await fetch(
             'https://api.openai.com/v1/chat/completions',
@@ -33,7 +42,7 @@ wss.on('connection', (ws) => {
                     model: 'gpt-4.1-mini',
                     stream: true,
                     messages: [
-                        { role: 'user', content: prompt }
+                        { role: 'user', content: data.prompt }
                     ]
                 })
             }
@@ -41,38 +50,49 @@ wss.on('connection', (ws) => {
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-
+        let buffer = '';
+          
         while (true) {
-            const { value, done } = await reader.read();
-            if (done) break;
+                const { value, done } = await reader.read();
+                if (done) break;
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
 
-            for (const line of lines) {
-                if (!line.startsWith('data:')) continue;
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
 
-                const data = line.replace('data:', '').trim();
-                if (data === '[DONE]') {
-                    ws.send(JSON.stringify({ done: true }));
-                    return;
-                }
-
-                try {
-                    const parsed = JSON.parse(data);
-                    const token = parsed.choices?.[0]?.delta?.content;
-                    if (token) {
-                        ws.send(JSON.stringify({ token }));
+                    const payload = line.replace('data:', '').trim();
+                    if (payload === '[DONE]') {
+                        ws.send(JSON.stringify({ type: 'done' }));
+                        return;
                     }
-                } catch (e) {
-                    // ignore partial JSON
+
+                    try {
+                        const parsed = JSON.parse(payload);
+                        const token = parsed.choices?.[0]?.delta?.content;
+                        if (token) {
+                            ws.send(JSON.stringify({
+                                type: 'token',
+                                value: token
+                            }));
+                        }
+                    } catch {
+                        // partial JSON – ignore
+                    }
                 }
             }
+        } catch (err) {
+            ws.send(JSON.stringify({
+                type: 'error',
+                message: err.message
+            }));
         }
     });
 
     ws.on('close', () => {
         clearInterval(heartbeat);
-        console.log('Client disconnected')
+        console.log('❌ Client disconnected');
     });
 });
