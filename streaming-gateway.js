@@ -10,6 +10,8 @@ export function registerStreamingGateway(wss) {
             }
         }, 25000);
 
+        let textBuffer = '';
+
         ws.on('message', async (message) => {
             let data;
             try {
@@ -18,10 +20,12 @@ export function registerStreamingGateway(wss) {
                 return;
             }
 
-            if (data.type === 'pong') return;
             if (!data.prompt) return;
 
             try {
+                /** -------------------------------
+                 * 1️⃣ STREAM TEXT FROM CHAT
+                 * --------------------------------*/
                 const response = await fetch(
                     'https://api.openai.com/v1/chat/completions',
                     {
@@ -40,17 +44,15 @@ export function registerStreamingGateway(wss) {
 
                 let buffer = '';
 
-                response.body.on('data', (chunk) => {
+                response.body.on('data', async (chunk) => {
                     buffer += chunk.toString();
-
                     const lines = buffer.split('\n');
-                    buffer = lines.pop(); // keep partial line
+                    buffer = lines.pop();
 
                     for (const line of lines) {
                         if (!line.startsWith('data:')) continue;
 
                         const payload = line.replace('data:', '').trim();
-                        console.log(' payload @}-- ' + payload);
                         if (payload === '[DONE]') {
                             ws.send(JSON.stringify({ type: 'done' }));
                             return;
@@ -59,20 +61,28 @@ export function registerStreamingGateway(wss) {
                         try {
                             const parsed = JSON.parse(payload);
                             const token = parsed.choices?.[0]?.delta?.content;
+
                             if (token) {
                                 ws.send(JSON.stringify({
                                     type: 'token',
                                     value: token
                                 }));
+
+                                textBuffer += token;
+
+                                /** -------------------------------
+                                 * 2️⃣ CHUNK TEXT FOR TTS
+                                 * --------------------------------*/
+                                if (shouldFlush(textBuffer)) {
+                                    const phrase = textBuffer.trim();
+                                    textBuffer = '';
+                                    streamAudio(ws, phrase);
+                                }
                             }
                         } catch {
-                            // partial JSON, ignore
+                            // ignore partial JSON
                         }
                     }
-                });
-
-                response.body.on('end', () => {
-                    ws.send(JSON.stringify({ type: 'done' }));
                 });
 
             } catch (err) {
@@ -88,4 +98,51 @@ export function registerStreamingGateway(wss) {
             console.log('❌ Client disconnected');
         });
     });
+}
+
+/** --------------------------------
+ * Chunking heuristic
+ * --------------------------------*/
+function shouldFlush(text) {
+    return (
+        text.split(' ').length >= 4 ||
+        /[.!?]$/.test(text)
+    );
+}
+
+/** --------------------------------
+ * Stream audio from OpenAI TTS
+ * --------------------------------*/
+async function streamAudio(ws, text) {
+    try {
+        const res = await fetch(
+            'https://api.openai.com/v1/audio/speech',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: 'gpt-4o-mini-tts',
+                    voice: 'coral',
+                    input: text,
+                    response_format: 'wav'
+                })
+            }
+        );
+
+        res.body.on('data', (audioChunk) => {
+            ws.send(JSON.stringify({
+                type: 'audio',
+                data: audioChunk.toString('base64')
+            }));
+        });
+
+    } catch (err) {
+        ws.send(JSON.stringify({
+            type: 'audio_error',
+            message: err.message
+        }));
+    }
 }
