@@ -50,6 +50,7 @@ export function registerStreamingGateway(wss) {
                         if (!line.startsWith('data:')) continue;
 
                         const payload = line.replace('data:', '').trim();
+                        console.log(' payload @}-- ' + payload);
                         if (payload === '[DONE]') {
                             ws.send(JSON.stringify({ type: 'done' }));
                             return;
