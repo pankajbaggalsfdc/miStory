@@ -72,12 +72,12 @@ export function registerStreamingGateway(wss) {
 
                                 /** -------------------------------
                                  * 2️⃣ CHUNK TEXT FOR TTS
-                                 * --------------------------------*/
+                                 * -------------------------------
                                 if (shouldFlush(textBuffer)) {
                                     const phrase = textBuffer.trim();
                                     textBuffer = '';
                                     streamAudio(ws, phrase);
-                                }
+                                } **/
                             }
                         } catch {
                             // ignore partial JSON
