@@ -106,7 +106,7 @@ export function registerStreamingGateway(wss) {
  * --------------------------------*/
 function shouldFlush(text) {
     return (
-        text.split(' ').length >= ${process.env.wordCount} ||
+        text.split(' ').length >= `${process.env.wordCount}` ||
         /[.!?]$/.test(text)
     );
 }
