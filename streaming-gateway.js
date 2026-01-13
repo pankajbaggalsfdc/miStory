@@ -133,8 +133,14 @@ async function streamAudio(ws, text) {
             }
         );
 
+    console.log (' text @}--' + text);
+    console.log (' res @}--' + res.body);
+
     for await (const chunk of res.body) {
       if (ws.readyState !== ws.OPEN) return;
+
+      console.log (' Chunk sent @}--' + chunk);
+      console.log (' Chunk sent @}--' + chunk.toString('base64'));
 
       ws.send(JSON.stringify({
         type: 'audio',
