@@ -133,6 +133,7 @@ async function streamAudio(ws, text) {
             }
         );
 
+
         ws.send(JSON.stringify({
         type: 'audio',
         format: 'pcm16',
