@@ -133,6 +133,14 @@ async function streamAudio(ws, text) {
             }
         );
 
+
+        ws.send(JSON.stringify({
+        type: 'audio',
+        format: 'pcm16',
+        sampleRate: 24000,
+        data: res.body.toString('base64')
+        }));
+    /*
     console.log (' text @}--' + text);
     console.log (' res @}--' + res.body);
 
@@ -148,7 +156,7 @@ async function streamAudio(ws, text) {
         sampleRate: 24000,
         data: chunk.toString('base64')
       }));
-    }
+    }*/
 
     } catch (err) {
         ws.send(JSON.stringify({
