@@ -134,7 +134,7 @@ async function streamAudio(ws, text) {
         );
 
     console.log (' text @}--' + text);
-    console.log (' text @}--' + res);
+    console.log (' res @}--' + res.body);
 
     for await (const chunk of res.body) {
       if (ws.readyState !== ws.OPEN) return;
