@@ -128,21 +128,19 @@ async function streamAudio(ws, text) {
                     model: 'gpt-4o-mini-tts',
                     voice: 'coral',
                     input: text,
-                    response_format: 'pcm'
+                    response_format: 'mp3'
                 })
             }
         );
 
-    for await (const chunk of res.body) {
-      if (ws.readyState !== ws.OPEN) return;
+        const buffer = await res.arrayBuffer();
+        const mp3Base64 = Buffer.from(buffer).toString('base64');
 
       ws.send(JSON.stringify({
         type: 'audio',
-        format: 'pcm16',
-        sampleRate: 24000,
-        data: chunk.toString('base64')
+        format: 'mp3',
+        data: mp3Base64
       }));
-    }
 
     } catch (err) {
         ws.send(JSON.stringify({
