@@ -127,6 +127,7 @@ async function streamAudio(ws, text) {
                 body: JSON.stringify({
                     model: 'gpt-4o-mini-tts',
                     voice: 'coral',
+                    "instructions": "you are the storyteller, speak in a calm, positive tone.",
                     input: text,
                     response_format: 'mp3'
                 })
