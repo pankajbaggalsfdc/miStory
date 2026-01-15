@@ -20,6 +20,8 @@ export function registerStreamingGateway(wss) {
                 return;
             }
 
+            console.log(' data @}-- ' + data);
+
             if (!data.prompt) return;
 
             try {
