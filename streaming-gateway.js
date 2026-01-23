@@ -129,7 +129,16 @@ async function streamAudio(ws, text) {
                 body: JSON.stringify({
                     model: 'gpt-4o-mini-tts',
                     voice: 'coral',
-                    "instructions": "you are the storyteller, speak in a calm, positive tone.",
+                    "instructions": "Read this story as a natural human narrator. Use moderate emotional expression. Match pacing and tone to the story’s flow." + 
+                                        "Guidelines: " +
+                                        " - Calm and curious at the beginning " +
+                                        " - Slightly playful during light moments " +
+                                        " - Quicker and more focused during tense sections " +
+                                        " - Softer and slower during emotional resolution " +
+                                        " - Warm, reassuring tone at the end " +
+                                        " Use natural pauses at line breaks. " +
+                                        " Do not exaggerate or dramatize.  " +
+                                        " Keep the delivery intimate, smooth, and human.",
                     input: text,
                     response_format: 'mp3'
                 })
