@@ -11,6 +11,9 @@ export function registerStreamingGateway(wss) {
         }, 25000);
 
         let textBuffer = '';
+        //  queues
+        const ttsQueue = [];
+        let ttsProcessing = false;
 
         ws.on('message', async (message) => {
             let data;
@@ -79,7 +82,7 @@ export function registerStreamingGateway(wss) {
                                     const phrase = textBuffer.trim();
                                     textBuffer = '';
                                     console.log(' Phrase to Audio @}-- ' + phrase);
-                                    await streamAudio(ws, phrase);
+                                    enqueueTTS(ws, phrase);
                                 } 
                             }
                         } catch {
@@ -112,6 +115,23 @@ function shouldFlush(text) {
         /[.!?]$/.test(text)
     );
 }
+
+async function enqueueTTS(ws, text) {
+  ttsQueue.push(text);
+  if (!ttsProcessing) processTTSQueue(ws);
+}
+
+async function processTTSQueue(ws) {
+  ttsProcessing = true;
+
+  while (ttsQueue.length > 0) {
+    const phrase = ttsQueue.shift();
+    await streamAudio(ws, phrase); // 🔒 strictly sequential
+  }
+
+  ttsProcessing = false;
+}
+
 
 /** --------------------------------
  * Stream audio from OpenAI TTS
