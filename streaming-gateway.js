@@ -79,7 +79,7 @@ export function registerStreamingGateway(wss) {
                                     const phrase = textBuffer.trim();
                                     textBuffer = '';
                                     console.log(' Phrase to Audio @}-- ' + phrase);
-                                    streamAudio(ws, phrase);
+                                    await streamAudio(ws, phrase);
                                 } 
                             }
                         } catch {
