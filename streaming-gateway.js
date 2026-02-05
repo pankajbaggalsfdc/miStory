@@ -147,10 +147,12 @@ async function streamAudio(ws, text) {
 
         const buffer = await res.arrayBuffer();
         const mp3Base64 = Buffer.from(buffer).toString('base64');
+        console.log(' caption @}-- ' + text);
 
       ws.send(JSON.stringify({
         type: 'audio',
         format: 'mp3',
+        caption: text,
         data: mp3Base64
       }));
 
