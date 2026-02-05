@@ -118,7 +118,7 @@ function shouldFlush(text) {
  * --------------------------------*/
 async function streamAudio(ws, text) {
     try {
-        console.log(' text @}-- ' + text + ' time @--' + NOW());
+        console.log(' text @}-- ' + text + ' time @-- ' + NOW.toLocaleTimeString());
         const res = await fetch(
             'https://api.openai.com/v1/audio/speech',
             {
@@ -148,7 +148,7 @@ async function streamAudio(ws, text) {
 
         const buffer = await res.arrayBuffer();
         const mp3Base64 = Buffer.from(buffer).toString('base64');
-        console.log(' caption @}-- ' + ' time @--' + NOW());
+        console.log(' caption @}-- ' + text + ' time @-- ' + NOW.toLocaleTimeString());
 
       ws.send(JSON.stringify({
         type: 'audio',
