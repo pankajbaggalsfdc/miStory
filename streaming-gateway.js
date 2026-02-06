@@ -11,9 +11,7 @@ export function registerStreamingGateway(wss) {
         }, 25000);
 
         let textBuffer = '';
-        //  queues
-        const ttsQueue = [];
-        let ttsProcessing = false;
+
 
         ws.on('message', async (message) => {
             let data;
@@ -115,6 +113,10 @@ function shouldFlush(text) {
         /[.!?]$/.test(text)
     );
 }
+
+//  queues
+const ttsQueue = [];
+let ttsProcessing = false;
 
 async function enqueueTTS(ws, text) {
   ttsQueue.push(text);
