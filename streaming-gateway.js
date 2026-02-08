@@ -4,6 +4,26 @@ export function registerStreamingGateway(wss) {
     wss.on('connection', (ws) => {
         console.log('🔌 Client connected');
 
+        //  queues
+        const ttsQueue = [];
+        let ttsProcessing = false;
+        
+        async function enqueueTTS(ws, text) {
+          ttsQueue.push(text);
+          if (!ttsProcessing) processTTSQueue(ws);
+        }
+        
+        async function processTTSQueue(ws) {
+          ttsProcessing = true;
+        
+          while (ttsQueue.length > 0) {
+            const phrase = ttsQueue.shift();
+            await streamAudio(ws, phrase); // 🔒 strictly sequential
+          }
+        
+          ttsProcessing = false;
+        }
+
         const heartbeat = setInterval(() => {
             if (ws.readyState === ws.OPEN) {
                 ws.send(JSON.stringify({ type: 'ping' }));
@@ -112,27 +132,6 @@ function shouldFlush(text) {
         /[.!?]$/.test(text)
     );
 }
-
-//  queues
-const ttsQueue = [];
-let ttsProcessing = false;
-
-async function enqueueTTS(ws, text) {
-  ttsQueue.push(text);
-  if (!ttsProcessing) processTTSQueue(ws);
-}
-
-async function processTTSQueue(ws) {
-  ttsProcessing = true;
-
-  while (ttsQueue.length > 0) {
-    const phrase = ttsQueue.shift();
-    await streamAudio(ws, phrase); // 🔒 strictly sequential
-  }
-
-  ttsProcessing = false;
-}
-
 
 /** --------------------------------
  * Stream audio from OpenAI TTS
