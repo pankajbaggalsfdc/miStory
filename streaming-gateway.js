@@ -32,7 +32,6 @@ export function registerStreamingGateway(wss) {
 
         let textBuffer = '';
 
-
         ws.on('message', async (message) => {
             let data;
             try {
